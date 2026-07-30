@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# UI-UX Skills
+.agents
+
+# CodeGraph
+.codegraph
+
+# task
+task.md

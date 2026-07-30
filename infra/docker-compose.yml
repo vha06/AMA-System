@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: ama_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: ama_chromadb
+    ports:
+      - "8000:8000"
+    volumes:
+      - chromadb_data:/chroma/chroma
+    restart: unless-stopped
+    environment:
+      - IS_PERSISTENT=TRUE
+
+volumes:
+  redis_data:
+  chromadb_data:
