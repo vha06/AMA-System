@@ -2,13 +2,23 @@ import os
 import json
 import logging
 from typing import List, Dict, Any, Optional
-import networkx as nx
-from networkx.readwrite import json_graph
+
 import chromadb
+import networkx as nx
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+# LlamaIndex Imports
+from llama_index.core import PropertyGraphIndex, Document, Settings
+from llama_index.core.graph_stores import SimplePropertyGraphStore
+from llama_index.core.graph_stores.types import EntityNode, Relation
+from llama_index.core.embeddings import MockEmbedding
+from llama_index.core.llms import MockLLM
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.llms.gemini import Gemini
+from llama_index.embeddings.gemini import GeminiEmbedding
 
 from src.core.config import settings
 from src.core.models import (
@@ -31,7 +41,7 @@ Quy tắc:
 
 
 class GraphRAGKnowledgeBase:
-    """GraphRAG Knowledge Base combining ChromaDB (Vector) and NetworkX (Graph)."""
+    """Enhanced GraphRAG Knowledge Base utilizing LlamaIndex Property Graph Store and ChromaDB."""
 
     def __init__(
         self,
@@ -47,68 +57,111 @@ class GraphRAGKnowledgeBase:
         self.graph_path = graph_path
         self.chroma_path = chroma_path
 
-        # Initialize Gemini Client
+        # 1. Gemini GenAI Client for direct structured extraction fallback/verification
         self._client = None
         if self.api_key:
             self._client = genai.Client(api_key=self.api_key)
+
+        # 2. LlamaIndex LLM & Embedding Setup
+        if self.api_key:
+            try:
+                self.llm = Gemini(model=self.model_name, api_key=self.api_key)
+                self.embed_model = GeminiEmbedding(model_name=self.embedding_model, api_key=self.api_key)
+            except Exception as e:
+                logger.warning(f"Failed to initialize Gemini LlamaIndex wrappers: {e}. Falling back to Mock.")
+                self.llm = MockLLM()
+                self.embed_model = MockEmbedding(embed_dim=768)
         else:
-            logger.warning("GEMINI_API_KEY is missing. GraphRAG will operate in offline/mock mode.")
+            logger.warning("GEMINI_API_KEY missing. GraphRAG operating in Mock/Offline mode.")
+            self.llm = MockLLM()
+            self.embed_model = MockEmbedding(embed_dim=768)
 
-        # Initialize NetworkX Graph
-        self.graph = nx.DiGraph()
-        self._load_graph()
+        Settings.llm = self.llm
+        Settings.embed_model = self.embed_model
 
-        # Initialize ChromaDB Vector Store
+        # 3. ChromaDB Vector Store
         os.makedirs(self.chroma_path, exist_ok=True)
         self.chroma_client = chromadb.PersistentClient(path=self.chroma_path)
         self.collection = self.chroma_client.get_or_create_collection(
             name="graphrag_chunks",
             metadata={"hnsw:space": "cosine"}
         )
+        self.vector_store = ChromaVectorStore(chroma_collection=self.collection)
+
+        # 4. NetworkX Graph (for compatibility)
+        self.graph = nx.DiGraph()
+
+        # 5. LlamaIndex Property Graph Store
+        self.graph_store = SimplePropertyGraphStore()
+        self._load_graph()
+
+        # 6. Initialize LlamaIndex PropertyGraphIndex
+        self.index = PropertyGraphIndex.from_documents(
+            [],
+            property_graph_store=self.graph_store,
+            vector_store=self.vector_store,
+            embed_model=self.embed_model,
+            llm=self.llm,
+        )
+
+    def _sync_networkx_to_property_store(self) -> None:
+        """Sync manual edits from self.graph into PropertyGraphStore."""
+        nodes = []
+        relations = []
+        for u, v, data in self.graph.edges(data=True):
+            rel_label = data.get("relation", "relates_to")
+            e1 = EntityNode(name=str(u), label="ENTITY")
+            e2 = EntityNode(name=str(v), label="ENTITY")
+            rel = Relation(label=rel_label, source_id=e1.id, target_id=e2.id)
+            nodes.extend([e1, e2])
+            relations.append(rel)
+        if nodes and relations:
+            self.graph_store.upsert_nodes(nodes)
+            self.graph_store.upsert_relations(relations)
+
+    def _sync_property_store_to_networkx(self) -> None:
+        """Sync PropertyGraphStore triplets into self.graph."""
+        try:
+            if hasattr(self.graph_store, "graph") and hasattr(self.graph_store.graph, "nodes"):
+                node_keys = list(self.graph_store.graph.nodes.keys())
+                if node_keys:
+                    raw_triplets = self.graph_store.get_triplets(entity_names=node_keys)
+                    for src, rel, tgt in raw_triplets:
+                        s_name = getattr(src, "name", str(src))
+                        r_label = getattr(rel, "label", getattr(rel, "relation", "relates_to"))
+                        t_name = getattr(tgt, "name", str(tgt))
+                        self.graph.add_node(s_name, type="entity")
+                        self.graph.add_node(t_name, type="entity")
+                        self.graph.add_edge(s_name, t_name, relation=r_label)
+        except Exception as e:
+            logger.error(f"Error syncing property store to NetworkX: {e}")
 
     def _load_graph(self) -> None:
-        """Load graph from JSON file if exists."""
+        """Load PropertyGraphStore from persisted path if exists."""
         if os.path.exists(self.graph_path):
             try:
-                with open(self.graph_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    self.graph = json_graph.node_link_graph(data)
-                logger.info(f"Loaded knowledge graph with {self.graph.number_of_nodes()} nodes and {self.graph.number_of_edges()} edges.")
+                self.graph_store = SimplePropertyGraphStore.from_persist_path(self.graph_path)
+                self._sync_property_store_to_networkx()
+                logger.info(f"Loaded LlamaIndex PropertyGraphStore from {self.graph_path}.")
             except Exception as e:
-                logger.error(f"Failed to load graph JSON from {self.graph_path}: {e}")
-                self.graph = nx.DiGraph()
-        else:
-            self.graph = nx.DiGraph()
+                logger.error(f"Failed to load graph from {self.graph_path}: {e}")
+                self.graph_store = SimplePropertyGraphStore()
 
     def _save_graph(self) -> None:
-        """Save NetworkX graph to JSON file."""
+        """Save LlamaIndex PropertyGraphStore to file."""
+        self._sync_networkx_to_property_store()
         os.makedirs(os.path.dirname(self.graph_path) or ".", exist_ok=True)
         try:
-            data = json_graph.node_link_data(self.graph)
-            with open(self.graph_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            logger.info(f"Saved knowledge graph to {self.graph_path}.")
+            self.graph_store.persist(self.graph_path)
+            logger.info(f"Saved PropertyGraphStore to {self.graph_path}.")
         except Exception as e:
             logger.error(f"Failed to save graph to {self.graph_path}: {e}")
 
     def _get_embedding(self, text: str) -> List[float]:
-        """Generate embedding vector using Google Embedding API."""
-        if not self._client:
-            # Fallback zero vector if no client
-            return [0.0] * 768
-
+        """Generate embedding vector using LlamaIndex embed model or fallback."""
         try:
-            response = self._client.models.embed_content(
-                model=self.embedding_model,
-                contents=text,
-            )
-            if hasattr(response, "embedding") and hasattr(response.embedding, "values"):
-                return response.embedding.values
-            elif hasattr(response, "embeddings") and len(response.embeddings) > 0:
-                return response.embeddings[0].values
-            raise ValueError("Unexpected response format from embedding API.")
-        except Exception as e:
-            logger.error(f"Error generating embedding: {e}")
+            return self.embed_model.get_text_embedding(text)
+        except Exception:
             return [0.0] * 768
 
     @retry(
@@ -118,7 +171,7 @@ class GraphRAGKnowledgeBase:
         reraise=False,
     )
     def extract_triplets(self, text: str) -> List[Triplet]:
-        """Extract Triplets from text using Gemini 2.5 Pro."""
+        """Extract Triplets from text using Gemini."""
         if not self._client:
             logger.warning("No API key available for triplet extraction.")
             return []
@@ -149,7 +202,7 @@ class GraphRAGKnowledgeBase:
         return []
 
     def add_knowledge(self, text: str, doc_id: Optional[str] = None) -> List[Triplet]:
-        """Process raw text, extract Triplets, store in NetworkX graph and ChromaDB."""
+        """Process raw text, extract Triplets, store in Property Graph and ChromaDB."""
         if not text or not text.strip():
             return []
 
@@ -160,19 +213,30 @@ class GraphRAGKnowledgeBase:
         except Exception as e:
             logger.error(f"Failed to extract triplets: {e}")
 
-        # 2. Add Triplets to NetworkX Graph
+        # 2. Add Triplets to PropertyGraphStore and NetworkX
+        nodes = []
+        relations = []
         for t in triplets:
             subj, pred, obj = t.subject.strip(), t.predicate.strip(), t.object.strip()
             self.graph.add_node(subj, type="entity")
             self.graph.add_node(obj, type="entity")
             self.graph.add_edge(subj, obj, relation=pred)
 
+            e1 = EntityNode(name=subj, label="ENTITY")
+            e2 = EntityNode(name=obj, label="ENTITY")
+            rel = Relation(label=pred, source_id=e1.id, target_id=e2.id)
+            nodes.extend([e1, e2])
+            relations.append(rel)
+
+        if nodes and relations:
+            self.graph_store.upsert_nodes(nodes)
+            self.graph_store.upsert_relations(relations)
+
         self._save_graph()
 
         # 3. Add Document Chunk to ChromaDB Vector Store
         embedding = self._get_embedding(text)
         chunk_id = doc_id or f"doc_{self.collection.count() + 1}"
-        
         self.collection.add(
             ids=[chunk_id],
             documents=[text],
@@ -180,16 +244,25 @@ class GraphRAGKnowledgeBase:
             metadatas=[{"triplet_count": len(triplets)}]
         )
 
+        # 4. Insert into LlamaIndex PropertyGraphIndex only when using real LLM (not MockLLM)
+        if not isinstance(self.llm, MockLLM):
+            try:
+                doc = Document(text=text, doc_id=chunk_id)
+                self.index.insert(doc)
+            except Exception as e:
+                logger.warning(f"PropertyGraphIndex insertion notice: {e}")
+
         logger.info(f"Added knowledge chunk {chunk_id}: {len(triplets)} triplets extracted.")
         return triplets
 
     def query_knowledge(self, query: str, top_k: int = 5) -> KnowledgeQueryResponse:
-        """Execute GraphRAG hybrid retrieval: Vector search + Graph traversal."""
-        query_embedding = self._get_embedding(query)
+        """Execute GraphRAG hybrid retrieval using LlamaIndex PropertyGraph & ChromaDB."""
+        vector_docs: List[str] = []
+        graph_triplets: List[Triplet] = []
 
         # 1. Vector Search in ChromaDB
-        vector_docs: List[str] = []
         try:
+            query_embedding = self._get_embedding(query)
             results = self.collection.query(
                 query_embeddings=[query_embedding],
                 n_results=min(top_k, max(1, self.collection.count()))
@@ -199,38 +272,35 @@ class GraphRAGKnowledgeBase:
         except Exception as e:
             logger.error(f"Vector search failed: {e}")
 
-        # 2. Graph Search in NetworkX
-        graph_triplets: List[Triplet] = []
+        # 2. Try LlamaIndex PropertyGraph Retriever to supplement vector docs if not using MockLLM
+        if not isinstance(self.llm, MockLLM):
+            try:
+                retriever = self.index.as_retriever()
+                retrieved_nodes = retriever.retrieve(query)
+                for n in retrieved_nodes:
+                    text_content = getattr(n, 'text', str(n))
+                    if text_content and text_content not in vector_docs:
+                        vector_docs.append(text_content)
+            except Exception as e:
+                logger.debug(f"PropertyGraph retriever notice: {e}")
+
+        # Limit vector results to requested top_k
+        vector_docs = vector_docs[:top_k]
+
+        # 3. Graph Traversal for Triplets matching query
         q_lower = query.lower()
-
-        # Find matching nodes
-        matching_nodes = [
-            node for node in self.graph.nodes()
-            if str(node).lower() in q_lower or q_lower in str(node).lower()
-        ]
-
-        # Traversal: get out-edges and in-edges for matched nodes
         visited_edges = set()
-        for node in matching_nodes:
-            # Outgoing relations
-            for neighbor in self.graph.neighbors(node):
-                edge_data = self.graph.get_edge_data(node, neighbor)
-                rel = edge_data.get("relation", "relates_to") if edge_data else "relates_to"
-                edge_key = (node, rel, neighbor)
+
+        for u, v, data in self.graph.edges(data=True):
+            rel = data.get("relation", "relates_to")
+            u_str, v_str = str(u), str(v)
+            if q_lower in u_str.lower() or q_lower in v_str.lower() or u_str.lower() in q_lower or v_str.lower() in q_lower:
+                edge_key = (u_str, rel, v_str)
                 if edge_key not in visited_edges:
                     visited_edges.add(edge_key)
-                    graph_triplets.append(Triplet(subject=str(node), predicate=rel, object=str(neighbor)))
+                    graph_triplets.append(Triplet(subject=u_str, predicate=rel, object=v_str))
 
-            # Incoming relations
-            for predecessor in self.graph.predecessors(node):
-                edge_data = self.graph.get_edge_data(predecessor, node)
-                rel = edge_data.get("relation", "relates_to") if edge_data else "relates_to"
-                edge_key = (predecessor, rel, node)
-                if edge_key not in visited_edges:
-                    visited_edges.add(edge_key)
-                    graph_triplets.append(Triplet(subject=str(predecessor), predicate=rel, object=str(node)))
-
-        # 3. Combine context
+        # 4. Combine context
         context_parts = []
         if vector_docs:
             context_parts.append("--- VECTOR CONTEXT ---")
