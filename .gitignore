@@ -225,3 +225,9 @@ __marimo__/
 
 # task
 task.md
+
+#.gemini
+.gemini
+backend/data/
+backend/test_pg_persist/
+tasks/
