@@ -1,9 +1,12 @@
 import logging
 import re
 import httpx
+import os
+from datetime import datetime
 from bs4 import BeautifulSoup
 import html2text
 from playwright.async_api import async_playwright
+from playwright_stealth import Stealth
 
 from src.agents.scraper.schemas import ScrapedContent, ScrapingMethod
 
@@ -55,16 +58,41 @@ class WebScraperTool:
             return self._clean_html(response.text)
 
     async def scrape_dynamic(self, url: str) -> tuple[str, str]:
-        """Fallback dynamic scraping using Playwright headless browser."""
+        """Fallback dynamic scraping using Playwright headless browser with Stealth."""
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page(user_agent=USER_AGENT)
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--disable-features=IsolateOrigins,site-per-process",
+                ]
+            )
+            context = await browser.new_context(
+                user_agent=USER_AGENT,
+                viewport={"width": 1920, "height": 1080},
+            )
+            page = await context.new_page()
+            await Stealth().apply_stealth_async(page)
+            
             try:
                 await page.goto(url, timeout=int(self.timeout_seconds * 1000), wait_until="domcontentloaded")
                 content = await page.content()
                 title = await page.title()
                 _, clean_text = self._clean_html(content)
                 return title or "", clean_text
+            except Exception as e:
+                # Capture screenshot on failure
+                screenshot_dir = os.path.join(os.path.dirname(__file__), "../../../../../logs/screenshots")
+                os.makedirs(screenshot_dir, exist_ok=True)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                safe_url = re.sub(r'[^a-zA-Z0-9]', '_', url)[:50]
+                screenshot_path = os.path.join(screenshot_dir, f"error_{safe_url}_{timestamp}.png")
+                try:
+                    await page.screenshot(path=screenshot_path)
+                    logger.error(f"Dynamic scrape failed. Screenshot saved to {screenshot_path}")
+                except Exception as ss_e:
+                    logger.error(f"Failed to take screenshot: {ss_e}")
+                raise e
             finally:
                 await browser.close()
 
