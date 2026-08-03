@@ -5,17 +5,19 @@ Hệ thống nhận đầu vào là một Prompt từ người dùng, tự độ
 
 ---
 
-## ✨ Các Tính Năng Cốt Lõi (Hiện tại)
+## ✨ Các Tính Năng Cốt Lõi (Đã hoàn thiện)
 
-- **🧠 Multi-Agent Architecture:** Sử dụng hệ thống đa tác tử (Router Agent -> Scraper Agent -> GraphRAG -> Insight Agent) để xử lý logic từ đầu đến cuối một cách tự động.
+- **🧠 Multi-Agent Architecture (CrewAI):** Tích hợp khung điều phối đa tác tử thông minh. Thay vì chạy tĩnh, các tác tử tự giao tiếp, chia nhỏ nhiệm vụ phân tích thị trường, scrape web và báo cáo.
 - **⚡ Generative UI Dashboard:** Giao diện Next.js hiện đại, hiển thị kết quả phân tích theo thời gian thực (Server-Sent Events) bao gồm 5 khối thông tin chiến lược:
   1. Đề xuất ngách thị trường tiềm năng.
   2. Khoảng giá tối ưu cho sản phẩm.
   3. Đánh giá rủi ro và điểm nghẽn.
   4. Câu lệnh (AI Prompts) hỗ trợ sinh ảnh sản phẩm (Midjourney/DALL-E).
   5. Bộ từ khóa chuẩn SEO.
-- **🛡️ Safe Fallback / Mock Mode:** Hệ thống tự động chuyển sang chế độ sử dụng dữ liệu giả định (Heuristic Mock Data) nếu không được cấp API Key, cho phép bạn trải nghiệm luồng giao diện 100% mượt mà mà không lo bị lỗi.
-- **🗃️ Caching Layer:** Tích hợp Upstash Redis để lưu trữ tạm các truy vấn lặp lại, tối ưu tốc độ phản hồi.
+- **🕸️ Đồ thị Tri thức (LlamaIndex):** Nâng cấp GraphRAG với Property Graph, kết hợp sức mạnh biểu diễn linh hoạt của đồ thị và tốc độ truy xuất của LlamaIndex.
+- **🕵️ Cào dữ liệu tàng hình (Playwright Stealth):** Thu thập dữ liệu mạnh mẽ, cho phép vượt qua rào cản Anti-bot từ các trang thương mại điện tử lớn.
+- **🔐 Quản lý Phiên & Xác Thực (Supabase):** Theo dõi lịch sử phân tích và xác thực người dùng theo thời gian thực (Database + Auth).
+- **🛡️ Safe Fallback / Mock Mode:** Hệ thống tự động chuyển sang chế độ sử dụng dữ liệu giả định nếu không được cấp API Key, cho phép trải nghiệm 100% mượt mà.
 
 ---
 
@@ -23,16 +25,21 @@ Hệ thống nhận đầu vào là một Prompt từ người dùng, tự độ
 
 ### Backend
 - **Framework:** Python / FastAPI
-- **LLM Engine:** Gemini 3.1 Pro (qua `google-genai` SDK)
-- **Cơ sở dữ liệu Knowledge:** ChromaDB (Vector) + NetworkX (Graph)
-- **Caching:** Redis (Upstash)
+- **LLM Engine:** Gemini 3.5 Flash (Nhanh, chi phí bằng $0)
+- **Orchestration:** CrewAI (Multi-Agent Framework)
+- **Knowledge Base:** LlamaIndex Property Graph + ChromaDB
+- **Scraping:** Playwright + Stealth Plugin
 - **Trình quản lý gói:** `uv` (Nhanh & Hiện đại)
+
+### Database & Auth
+- **Primary DB / Auth:** Supabase (PostgreSQL, RLS)
+- **Caching:** Redis (Upstash)
 
 ### Frontend
 - **Framework:** Next.js 15+ (App Router)
 - **Ngôn ngữ:** TypeScript
 - **Styling:** Tailwind CSS
-- **Luồng dữ liệu:** Server-Sent Events (SSE) với Custom JSON Stream Parser.
+- **Luồng dữ liệu:** Server-Sent Events (SSE) với Custom JSON Stream Parser
 
 ---
 
@@ -40,16 +47,20 @@ Hệ thống nhận đầu vào là một Prompt từ người dùng, tự độ
 
 ### 1. Chuẩn bị Môi trường
 Dự án được thiết kế chạy mượt mà ngay cả khi không có tài khoản API (Fallback Mode).
-Tuy nhiên, để chạy AI thật, bạn cần copy file `.env.example` thành `.env` trong thư mục `backend/` và điền Key:
+Tuy nhiên, để chạy đầy đủ chức năng AI và Database, bạn cần copy file `.env.example` thành `.env` trong thư mục `backend/` và điền Key:
 ```env
 GEMINI_API_KEY=your_actual_gemini_key_here
-GEMINI_MODEL=gemini-3.1-pro
+GEMINI_MODEL=gemini-3.5-flash
+
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
 ```
 
 ### 2. Khởi động Backend (Cổng 8000)
 Mở một cửa sổ Terminal (PowerShell hoặc CMD) và chạy:
 ```bash
 cd backend
+uv run playwright install chromium
 uv run uvicorn main:app --reload --port 8000
 ```
 - API Docs (Swagger): `http://localhost:8000/docs`
@@ -65,11 +76,9 @@ npm run dev
 
 ---
 
-## 🧭 Hướng Nghiên Cứu Tiếp Theo (Phase 7)
-Dự án được định hướng phát triển dài hạn với các mục tiêu nâng cấp sắp tới:
-1. **CrewAI:** Xây dựng khung điều phối đa tác tử thông minh hơn thay vì chạy tĩnh.
-2. **LlamaIndex Property Graph:** Nâng cấp GraphRAG thành công cụ trích xuất tri thức mạnh mẽ.
-3. **Advanced Playwright Scraper:** Vượt anti-bot, lấy dữ liệu mạng xã hội và E-commerce lớn (TikTok, Amazon).
-4. **Supabase Auth:** Tích hợp xác thực tài khoản và lưu lịch sử các phiên phân tích.
+## 📚 Hồ Sơ Quyết Định Kiến Trúc (ADRs) & Tài Liệu API
+Để hiểu sâu hơn về lý do lựa chọn các công nghệ (Gemini 3.5, Supabase, CrewAI, LlamaIndex), vui lòng xem:
+- [Hồ sơ Quyết định Kiến trúc (ADR)](docs/decisions/)
+- [Tài liệu API Hệ thống](docs/api.md)
 
-*(Chi tiết danh sách tác vụ nằm trong file `docs/task.md`)*
+*(Chi tiết danh sách tiến độ các tác vụ tổng quan nằm trong file `docs/task.md`)*
