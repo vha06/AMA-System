@@ -50,12 +50,12 @@ class SupabaseService:
         if source_links is None:
             source_links = []
 
-        clean_user_id = None
+        clean_user_id = "00000000-0000-0000-0000-000000000000"
         if user_id and user_id != "anonymous":
             try:
                 clean_user_id = str(uuid.UUID(user_id))
             except (ValueError, TypeError):
-                clean_user_id = None
+                clean_user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, user_id))
 
         log_data = {
             "id": str(uuid.uuid4()),

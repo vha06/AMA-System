@@ -17,7 +17,7 @@ class InsightAgent:
     """Strategic Insight Agent utilizing Gemini API to produce business insight reports."""
 
     def __init__(self, api_key: str | None = None, model_name: str | None = None):
-        self.api_key = api_key or settings.GEMINI_API_KEY
+        self.api_key = api_key if api_key is not None else settings.GEMINI_API_KEY
         self.model_name = model_name or settings.GEMINI_MODEL
         self._client = None
 
