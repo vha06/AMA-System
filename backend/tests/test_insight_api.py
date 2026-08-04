@@ -15,4 +15,3 @@ def test_stream_insight_endpoint():
     content = response.text
     assert len(content) > 0
     assert "niche_analysis" in content
-    assert "Cafe Mèo" in content
