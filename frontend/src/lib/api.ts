@@ -1,6 +1,9 @@
 import { RouterDecision } from '../types/market';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  '';
 
 export async function analyzeRouterQuery(query: string): Promise<RouterDecision> {
   const response = await fetch(`${API_BASE_URL}/api/v1/router/analyze`, {
