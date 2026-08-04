@@ -5,7 +5,7 @@ from google.genai import types
 from google.genai.errors import APIError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from src.core.config import settings
+from src.core.config import settings, get_gemini_model_chain
 from src.agents.router.schemas import RouterDecision, IntentType
 from src.agents.router.prompts import ROUTER_SYSTEM_PROMPT
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class RouterAgent:
-    """Router Agent classification engine using Gemini 3.1 Pro API (Free Tier)."""
+    """Router Agent classification engine using Gemini API."""
 
     def __init__(self, api_key: str | None = None, model_name: str | None = None):
         self.api_key = api_key or settings.GEMINI_API_KEY
@@ -27,14 +27,8 @@ class RouterAgent:
                 "GEMINI_API_KEY is not set. RouterAgent will operate in fallback mode."
             )
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((APIError, Exception)),
-        reraise=False,
-    )
     def _call_gemini_api(self, query: str) -> RouterDecision:
-        """Execute call to Gemini 3.1 Pro with rate-limit retries and structured output."""
+        """Execute call to Gemini API with Waterfall model chain fallback."""
         if not self._client:
             raise ValueError("GEMINI_API_KEY is required to call Gemini API.")
 
@@ -45,22 +39,30 @@ class RouterAgent:
             temperature=0.1,
         )
 
-        response = self._client.models.generate_content(
-            model=self.model_name,
-            contents=query,
-            config=config,
-        )
+        candidate_models = get_gemini_model_chain(self.model_name)
+        last_exception = None
 
-        if hasattr(response, "parsed") and response.parsed is not None:
-            if isinstance(response.parsed, RouterDecision):
-                return response.parsed
-            return RouterDecision.model_validate(response.parsed)
+        for model in candidate_models:
+            try:
+                response = self._client.models.generate_content(
+                    model=model,
+                    contents=query,
+                    config=config,
+                )
 
-        if response.text:
-            data = json.loads(response.text)
-            return RouterDecision.model_validate(data)
+                if hasattr(response, "parsed") and response.parsed is not None:
+                    if isinstance(response.parsed, RouterDecision):
+                        return response.parsed
+                    return RouterDecision.model_validate(response.parsed)
 
-        raise ValueError("Empty response received from Gemini API.")
+                if response.text:
+                    data = json.loads(response.text)
+                    return RouterDecision.model_validate(data)
+            except Exception as e:
+                logger.warning(f"Gemini model {model} failed in RouterAgent ({e}). Trying next in chain...")
+                last_exception = e
+
+        raise last_exception or ValueError("Empty response received from all Gemini API models.")
 
     def analyze_query(self, query: str) -> RouterDecision:
         """Public interface to analyze and route user queries."""

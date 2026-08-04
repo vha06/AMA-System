@@ -12,6 +12,23 @@ def get_valid_gemini_model(env_model: str) -> str:
         return raw_model
     return "gemini-3.5-flash"
 
+DEFAULT_WATERFALL_MODELS = [
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-flash-latest",
+]
+
+def get_gemini_model_chain(primary_model: str | None = None) -> list[str]:
+    chain = []
+    if primary_model:
+        chain.append(primary_model)
+    for model in DEFAULT_WATERFALL_MODELS:
+        if model not in chain:
+            chain.append(model)
+    return chain
+
 class Settings(BaseModel):
     PROJECT_NAME: str = "AMA-System"
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""

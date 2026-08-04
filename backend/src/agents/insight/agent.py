@@ -6,7 +6,7 @@ from google.genai import types
 from google.genai.errors import APIError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from src.core.config import settings
+from src.core.config import settings, get_gemini_model_chain
 from src.agents.insight.schemas import InsightReport, PricingStrategy
 from src.agents.insight.prompts import INSIGHT_SYSTEM_PROMPT
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class InsightAgent:
-    """Strategic Insight Agent utilizing Gemini 3.1 Pro (Free Tier API) to produce business insight reports."""
+    """Strategic Insight Agent utilizing Gemini API to produce business insight reports."""
 
     def __init__(self, api_key: str | None = None, model_name: str | None = None):
         self.api_key = api_key or settings.GEMINI_API_KEY
@@ -28,19 +28,12 @@ class InsightAgent:
                 "GEMINI_API_KEY is not set. InsightAgent will operate in fallback mode."
             )
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((APIError, Exception)),
-        reraise=False,
-    )
     def _call_gemini_api(self, topic: str, context_data: str) -> InsightReport:
-        """Execute call to Gemini 3.1 Pro with rate-limit retries and structured output."""
+        """Execute call to Gemini API with Waterfall model chain fallback."""
         if not self._client:
             raise ValueError("GEMINI_API_KEY is required to call Gemini API.")
 
         prompt = f"Chủ đề phân tích: {topic}\n\nDữ liệu bối cảnh (Context Data):\n{context_data}"
-
         config = types.GenerateContentConfig(
             system_instruction=INSIGHT_SYSTEM_PROMPT,
             response_mime_type="application/json",
@@ -48,22 +41,30 @@ class InsightAgent:
             temperature=0.2,
         )
 
-        response = self._client.models.generate_content(
-            model=self.model_name,
-            contents=prompt,
-            config=config,
-        )
+        candidate_models = get_gemini_model_chain(self.model_name)
+        last_exception = None
 
-        if hasattr(response, "parsed") and response.parsed is not None:
-            if isinstance(response.parsed, InsightReport):
-                return response.parsed
-            return InsightReport.model_validate(response.parsed)
+        for model in candidate_models:
+            try:
+                response = self._client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config=config,
+                )
 
-        if response.text:
-            data = json.loads(response.text)
-            return InsightReport.model_validate(data)
+                if hasattr(response, "parsed") and response.parsed is not None:
+                    if isinstance(response.parsed, InsightReport):
+                        return response.parsed
+                    return InsightReport.model_validate(response.parsed)
 
-        raise ValueError("Empty response received from Gemini API.")
+                if response.text:
+                    data = json.loads(response.text)
+                    return InsightReport.model_validate(data)
+            except Exception as e:
+                logger.warning(f"Gemini model {model} failed in _call_gemini_api ({e}). Trying next in chain...")
+                last_exception = e
+
+        raise last_exception or ValueError("Empty response received from all Gemini API models.")
 
     def analyze_insight(self, topic: str, context_data: str = "") -> InsightReport:
         """Public interface to generate strategic insights from topic and context."""
@@ -97,10 +98,7 @@ class InsightAgent:
             temperature=0.2,
         )
 
-        candidate_models = [self.model_name]
-        for fallback in ["gemini-3.5-flash", "gemini-flash-latest"]:
-            if fallback not in candidate_models:
-                candidate_models.append(fallback)
+        candidate_models = get_gemini_model_chain(self.model_name)
 
         for model in candidate_models:
             try:

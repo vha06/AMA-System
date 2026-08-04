@@ -7,7 +7,7 @@ from google.genai import types
 from google.genai.errors import APIError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from src.core.config import settings
+from src.core.config import settings, get_gemini_model_chain
 from src.agents.scraper.schemas import (
     ScraperInput,
     ScraperOutput,
@@ -52,26 +52,30 @@ class ScraperAgent:
         if not self._client:
             return self._heuristic_query_expansion(niche_or_topic)
 
-        try:
-            prompt = f"{SCRAPER_QUERY_GEN_PROMPT}\n\nNiche/Topic: {niche_or_topic}"
-            config = types.GenerateContentConfig(
-                response_mime_type="application/json",
-                temperature=0.3,
-            )
-            response = self._client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=config,
-            )
+        prompt = f"{SCRAPER_QUERY_GEN_PROMPT}\n\nNiche/Topic: {niche_or_topic}"
+        config = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.3,
+        )
 
-            if response.text:
-                data = json.loads(response.text)
-                if isinstance(data, list):
-                    return [str(q) for q in data[:3]]
-                elif isinstance(data, dict) and "queries" in data:
-                    return [str(q) for q in data["queries"][:3]]
-        except Exception as e:
-            logger.error(f"Error calling Gemini API for query generation: {e}")
+        candidate_models = get_gemini_model_chain(self.model_name)
+
+        for model in candidate_models:
+            try:
+                response = self._client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config=config,
+                )
+
+                if response.text:
+                    data = json.loads(response.text)
+                    if isinstance(data, list):
+                        return [str(q) for q in data[:3]]
+                    elif isinstance(data, dict) and "queries" in data:
+                        return [str(q) for q in data["queries"][:3]]
+            except Exception as e:
+                logger.warning(f"Gemini model {model} failed in _generate_queries ({e}). Trying next in chain...")
 
         return self._heuristic_fallback_queries(niche_or_topic)
 
@@ -138,7 +142,7 @@ class ScraperAgent:
         )
 
     def _summarize_findings(self, niche: str, results: List[ScrapedContent]) -> str:
-        """Summarize scraped text content using Gemini API."""
+        """Summarize scraped text content using Gemini API with model fallback."""
         try:
             combined_texts = []
             for r in results[:3]:
@@ -148,11 +152,20 @@ class ScraperAgent:
             context = "\n\n---\n\n".join(combined_texts)
             prompt = SCRAPER_SUMMARY_PROMPT.format(niche_or_topic=niche) + f"\n\nData:\n{context}"
 
-            response = self._client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-            )
-            return response.text.strip() if response.text else ""
+            candidate_models = get_gemini_model_chain(self.model_name)
+
+            for model in candidate_models:
+                try:
+                    response = self._client.models.generate_content(
+                        model=model,
+                        contents=prompt,
+                    )
+                    if response.text:
+                        return response.text.strip()
+                except Exception as e:
+                    logger.warning(f"Gemini model {model} failed in _summarize_findings ({e}). Trying next in chain...")
+
+            return ""
         except Exception as e:
             logger.error(f"Error generating summary: {e}")
             return ""
