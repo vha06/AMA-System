@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -21,9 +22,12 @@ app = FastAPI(
 )
 
 # Configure CORS for Next.js frontend
+origins_env = os.getenv("CORS_ORIGINS", "*")
+cors_origins = [origin.strip() for origin in origins_env.split(",")] if origins_env != "*" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
