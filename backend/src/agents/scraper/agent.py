@@ -7,7 +7,7 @@ from google.genai import types
 from google.genai.errors import APIError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from src.core.config import settings, get_gemini_model_chain
+from src.core.config import settings, get_google_model_chain
 from src.agents.scraper.schemas import (
     ScraperInput,
     ScraperOutput,
@@ -34,7 +34,7 @@ class ScraperAgent:
         max_urls_to_scrape: int = 5,
     ):
         self.api_key = api_key or settings.GEMINI_API_KEY
-        self.model_name = model_name or settings.GEMINI_MODEL
+        self.model_name = model_name or settings.LLM_MODEL
         self.max_urls_to_scrape = max_urls_to_scrape
         self.search_tool = DuckDuckGoSearchTool()
         self.scraper_tool = WebScraperTool()
@@ -48,7 +48,7 @@ class ScraperAgent:
             )
 
     def _generate_queries(self, niche_or_topic: str) -> List[str]:
-        """Generate search queries for the niche using Gemini 3.1 Pro or fallback."""
+        """Generate search queries for the niche using Google API or fallback."""
         if not self._client:
             return self._heuristic_query_expansion(niche_or_topic)
 
@@ -58,7 +58,8 @@ class ScraperAgent:
             temperature=0.3,
         )
 
-        candidate_models = get_gemini_model_chain(self.model_name)
+        candidate_models = get_google_model_chain(self.model_name)
+
 
         for model in candidate_models:
             try:
@@ -152,7 +153,7 @@ class ScraperAgent:
             context = "\n\n---\n\n".join(combined_texts)
             prompt = SCRAPER_SUMMARY_PROMPT.format(niche_or_topic=niche) + f"\n\nData:\n{context}"
 
-            candidate_models = get_gemini_model_chain(self.model_name)
+            candidate_models = get_google_model_chain(self.model_name)
 
             for model in candidate_models:
                 try:

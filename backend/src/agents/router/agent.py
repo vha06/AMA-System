@@ -5,7 +5,7 @@ from google.genai import types
 from google.genai.errors import APIError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from src.core.config import settings, get_gemini_model_chain
+from src.core.config import settings, get_google_model_chain
 from src.agents.router.schemas import RouterDecision, IntentType
 from src.agents.router.prompts import ROUTER_SYSTEM_PROMPT
 
@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 class RouterAgent:
-    """Router Agent classification engine using Gemini API."""
+    """Router Agent classification engine using Google API."""
 
     def __init__(self, api_key: str | None = None, model_name: str | None = None):
         self.api_key = api_key or settings.GEMINI_API_KEY
-        self.model_name = model_name or settings.GEMINI_MODEL
+        self.model_name = model_name or settings.LLM_MODEL
         self._client = None
 
         if self.api_key:
@@ -28,9 +28,9 @@ class RouterAgent:
             )
 
     def _call_gemini_api(self, query: str) -> RouterDecision:
-        """Execute call to Gemini API with Waterfall model chain fallback."""
+        """Execute call to Google API with Waterfall model chain fallback."""
         if not self._client:
-            raise ValueError("GEMINI_API_KEY is required to call Gemini API.")
+            raise ValueError("GEMINI_API_KEY is required to call Google API.")
 
         config = types.GenerateContentConfig(
             system_instruction=ROUTER_SYSTEM_PROMPT,
@@ -39,7 +39,8 @@ class RouterAgent:
             temperature=0.1,
         )
 
-        candidate_models = get_gemini_model_chain(self.model_name)
+        candidate_models = get_google_model_chain(self.model_name)
+
         last_exception = None
 
         for model in candidate_models:

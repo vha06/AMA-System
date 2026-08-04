@@ -6,7 +6,7 @@ from google.genai import types
 from google.genai.errors import APIError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from src.core.config import settings, get_gemini_model_chain
+from src.core.config import settings, get_google_model_chain
 from src.agents.insight.schemas import InsightReport, PricingStrategy
 from src.agents.insight.prompts import INSIGHT_SYSTEM_PROMPT
 
@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 class InsightAgent:
-    """Strategic Insight Agent utilizing Gemini API to produce business insight reports."""
+    """Strategic Insight Agent utilizing Google API to produce business insight reports."""
 
     def __init__(self, api_key: str | None = None, model_name: str | None = None):
         self.api_key = api_key if api_key is not None else settings.GEMINI_API_KEY
-        self.model_name = model_name or settings.GEMINI_MODEL
+        self.model_name = model_name or settings.LLM_MODEL
         self._client = None
 
         if self.api_key:
@@ -29,9 +29,9 @@ class InsightAgent:
             )
 
     def _call_gemini_api(self, topic: str, context_data: str) -> InsightReport:
-        """Execute call to Gemini API with Waterfall model chain fallback."""
+        """Execute call to Google API with Waterfall model chain fallback."""
         if not self._client:
-            raise ValueError("GEMINI_API_KEY is required to call Gemini API.")
+            raise ValueError("GEMINI_API_KEY is required to call Google API.")
 
         prompt = f"Chủ đề phân tích: {topic}\n\nDữ liệu bối cảnh (Context Data):\n{context_data}"
         config = types.GenerateContentConfig(
@@ -41,7 +41,7 @@ class InsightAgent:
             temperature=0.2,
         )
 
-        candidate_models = get_gemini_model_chain(self.model_name)
+        candidate_models = get_google_model_chain(self.model_name)
         last_exception = None
 
         for model in candidate_models:
@@ -61,10 +61,11 @@ class InsightAgent:
                     data = json.loads(response.text)
                     return InsightReport.model_validate(data)
             except Exception as e:
-                logger.warning(f"Gemini model {model} failed in _call_gemini_api ({e}). Trying next in chain...")
+                logger.warning(f"Google API model {model} failed in _call_gemini_api ({e}). Trying next in chain...")
                 last_exception = e
 
-        raise last_exception or ValueError("Empty response received from all Gemini API models.")
+        raise last_exception or ValueError("Empty response received from all Google API models.")
+
 
     def analyze_insight(self, topic: str, context_data: str = "") -> InsightReport:
         """Public interface to generate strategic insights from topic and context."""
@@ -98,7 +99,7 @@ class InsightAgent:
             temperature=0.2,
         )
 
-        candidate_models = get_gemini_model_chain(self.model_name)
+        candidate_models = get_google_model_chain(self.model_name)
 
         for model in candidate_models:
             try:

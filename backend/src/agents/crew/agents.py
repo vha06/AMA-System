@@ -4,13 +4,14 @@ from src.agents.crew.tools.crew_tools import MarketSearchCrewTool, WebScraperCre
 
 
 def get_llm() -> LLM:
-    """Khởi tạo cấu hình LLM Gemini cho CrewAI."""
-    model_name = settings.GEMINI_MODEL if settings.GEMINI_MODEL.startswith("gemini") else "gemini-3.1-pro"
+    """Khởi tạo cấu hình LLM cho CrewAI."""
+    model_name = settings.LLM_MODEL
     return LLM(
         model=f"gemini/{model_name}",
         api_key=settings.GEMINI_API_KEY or "dummy_key",
         temperature=0.2,
     )
+
 
 
 def create_router_agent() -> Agent:
