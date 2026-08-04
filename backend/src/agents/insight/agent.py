@@ -98,7 +98,7 @@ class InsightAgent:
         )
 
         candidate_models = [self.model_name]
-        for fallback in ["gemini-2.5-flash", "gemini-1.5-flash"]:
+        for fallback in ["gemini-3.5-flash", "gemini-flash-latest"]:
             if fallback not in candidate_models:
                 candidate_models.append(fallback)
 
