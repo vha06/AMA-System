@@ -30,32 +30,32 @@ export const SeoKeywordsCard: React.FC<SeoKeywordsCardProps> = ({
   };
 
   return (
-    <div className="relative group bg-slate-900/60 border border-slate-800/90 hover:border-violet-500/30 rounded-2xl p-6 backdrop-blur-xl shadow-xl transition-all space-y-4">
+    <div className="relative group bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/90 hover:border-orange-300 dark:hover:border-orange-500/30 rounded-2xl p-6 backdrop-blur-xl shadow-md transition-all space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 bg-gradient-to-br from-violet-500/20 to-purple-500/10 rounded-xl border border-violet-500/30 text-violet-400">
+          <div className="p-2.5 bg-orange-50 dark:bg-orange-500/20 rounded-xl border border-orange-200 dark:border-orange-500/30 text-orange-600 dark:text-orange-400">
             <Search className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-100 flex items-center space-x-2">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
               <span>Từ Khóa SEO & Quảng Cáo Tiềm Năng</span>
               {isStreaming && (
-                <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse"></span>
+                <span className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400 animate-pulse"></span>
               )}
             </h3>
-            <p className="text-xs text-slate-400">Từ khóa độ tìm kiếm tốt cho nội dung & chạy ads</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Từ khóa độ tìm kiếm tốt cho nội dung & chạy ads</p>
           </div>
         </div>
 
         {keywords.length > 0 && (
           <button
             onClick={handleCopyAll}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-violet-300 hover:text-white bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 rounded-lg transition-colors cursor-pointer"
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-300 hover:text-orange-700 dark:hover:text-white bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/30 rounded-lg transition-colors cursor-pointer"
           >
             {copiedAll ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Đã sao chép tất cả</span>
               </>
             ) : (
@@ -75,13 +75,13 @@ export const SeoKeywordsCard: React.FC<SeoKeywordsCardProps> = ({
             <button
               key={index}
               onClick={() => handleCopyOne(kw, index)}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-violet-500/40 text-slate-200 hover:text-violet-300 text-xs font-medium transition-all cursor-pointer group/tag shadow-sm"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-950/80 hover:bg-orange-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 hover:border-orange-300 dark:hover:border-orange-500/40 text-slate-800 dark:text-slate-200 hover:text-orange-600 dark:hover:text-orange-300 text-xs font-medium transition-all cursor-pointer group/tag shadow-xs"
               title="Bấm để sao chép từ khóa"
             >
-              <Hash className="w-3.5 h-3.5 text-violet-400 group-hover/tag:text-violet-300" />
+              <Hash className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400 group-hover/tag:text-orange-600" />
               <span>{kw}</span>
               {copiedIndex === index ? (
-                <Check className="w-3 h-3 text-emerald-400 ml-1" />
+                <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 ml-1" />
               ) : (
                 <Copy className="w-3 h-3 opacity-0 group-hover/tag:opacity-100 text-slate-400 transition-opacity ml-1" />
               )}
@@ -89,8 +89,8 @@ export const SeoKeywordsCard: React.FC<SeoKeywordsCardProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-slate-950/40 border border-slate-800/50 rounded-xl p-6 flex flex-col items-center justify-center text-center space-y-2 text-slate-500">
-          <Sparkles className="w-8 h-8 animate-pulse text-violet-500/40" />
+        <div className="bg-slate-100/60 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/50 rounded-xl p-6 flex flex-col items-center justify-center text-center space-y-2 text-slate-400 dark:text-slate-500">
+          <Sparkles className="w-8 h-8 animate-pulse text-orange-500/40" />
           <p className="text-xs">Đang đề xuất bộ từ khóa SEO chất lượng cao...</p>
         </div>
       )}

@@ -97,21 +97,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-40 bg-slate-950/95 border-r border-slate-800/80 backdrop-blur-xl transition-all duration-300 flex flex-col ${
+        className={`fixed top-0 left-0 bottom-0 z-40 bg-slate-50/95 dark:bg-slate-950/95 border-r border-slate-200/80 dark:border-slate-800/80 backdrop-blur-xl transition-all duration-300 flex flex-col ${
           isOpen ? 'w-72' : 'w-16'
         }`}
       >
         {/* Toggle Button Header */}
-        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/60">
+        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800/60">
           {isOpen && (
-            <div className="flex items-center space-x-2 text-slate-200 font-bold text-sm">
-              <Sparkle size={20} weight="fill" className="text-emerald-400" />
+            <div className="flex items-center space-x-2 text-slate-800 dark:text-slate-200 font-bold text-sm">
+              <Sparkle size={20} weight="fill" className="text-indigo-600 dark:text-indigo-400" />
               <span>Phiên phân tích</span>
             </div>
           )}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-lg transition-colors ml-auto"
+            className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-900 rounded-lg transition-colors ml-auto"
             title={isOpen ? 'Thu gọn thanh bên' : 'Mở rộng thanh bên'}
           >
             {isOpen ? <CaretLeft size={18} /> : <CaretRight size={18} />}
@@ -122,7 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-3">
           <button
             onClick={onNewSession}
-            className={`w-full flex items-center justify-center space-x-2 py-2.5 px-3 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-semibold transition-all shadow-sm ${
+            className={`w-full flex items-center justify-center space-x-2 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 rounded-xl text-xs font-semibold transition-all shadow-xs ${
               !isOpen && 'px-0'
             }`}
           >
@@ -134,16 +134,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Sessions List */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1 custom-scrollbar">
           {loading ? (
-            <div className="flex justify-center p-4 text-slate-500">
+            <div className="flex justify-center p-4 text-slate-400">
               <CircleNotch size={20} className="animate-spin" />
             </div>
           ) : !user ? (
             isOpen && (
-              <div className="p-4 text-center text-xs text-slate-400 space-y-2">
+              <div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
                 <p>Đăng nhập để xem lịch sử phiên làm việc của bạn.</p>
                 <button
                   onClick={onOpenAuth}
-                  className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors text-xs font-medium"
+                  className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-500/30 transition-colors text-xs font-medium"
                 >
                   Đăng nhập ngay
                 </button>
@@ -151,7 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )
           ) : sessions.length === 0 ? (
             isOpen && (
-              <div className="p-4 text-center text-xs text-slate-500">
+              <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500">
                 <Clock size={24} className="mx-auto mb-2 opacity-40" />
                 <p>Chưa có lịch sử phân tích nào.</p>
               </div>
@@ -165,24 +165,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => onSelectSession(item)}
                   className={`w-full flex items-center space-x-2.5 p-2.5 rounded-xl text-left text-xs transition-colors ${
                     isSelected
-                      ? 'bg-slate-800 text-slate-100 font-medium border border-slate-700'
-                      : 'text-slate-400 hover:bg-slate-900/80 hover:text-slate-200'
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium border border-slate-300 dark:border-slate-700'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-900/80 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                   title={item.prompt}
                 >
                   {/* Status Indicator Icon */}
                   {item.status === 'success' ? (
-                    <CheckCircle size={16} weight="fill" className="text-emerald-400 shrink-0" />
+                    <CheckCircle size={16} weight="fill" className="text-emerald-500 dark:text-emerald-400 shrink-0" />
                   ) : item.status === 'error' ? (
-                    <XCircle size={16} weight="fill" className="text-rose-400 shrink-0" />
+                    <XCircle size={16} weight="fill" className="text-rose-500 dark:text-rose-400 shrink-0" />
                   ) : (
-                    <CircleNotch size={16} className="text-amber-400 animate-spin shrink-0" />
+                    <CircleNotch size={16} className="text-amber-500 dark:text-amber-400 animate-spin shrink-0" />
                   )}
 
                   {isOpen && (
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-slate-200">{item.prompt}</p>
-                      <p className="text-[10px] text-slate-500">
+                      <p className="truncate text-slate-800 dark:text-slate-200">{item.prompt}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500">
                         {new Date(item.created_at).toLocaleDateString('vi-VN', {
                           day: '2-digit',
                           month: '2-digit',
@@ -199,24 +199,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* User Footer Section */}
-        <div className="p-3 border-t border-slate-800/60 bg-slate-950/80">
+        <div className="p-3 border-t border-slate-200/60 dark:border-slate-800/60 bg-slate-100/80 dark:bg-slate-950/80">
           {user ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-500/20 border border-indigo-200 dark:border-indigo-500/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs shrink-0">
                   {user.email?.[0]?.toUpperCase() || 'U'}
                 </div>
                 {isOpen && (
                   <div className="min-w-0">
-                    <p className="text-xs font-medium text-slate-200 truncate">{user.email}</p>
-                    <p className="text-[10px] text-emerald-400">Đã đăng nhập</p>
+                    <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">{user.email}</p>
+                    <p className="text-[10px] text-indigo-600 dark:text-indigo-400">Đã đăng nhập</p>
                   </div>
                 )}
               </div>
               {isOpen && (
                 <button
                   onClick={handleSignOut}
-                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-900 rounded-lg transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-slate-200 dark:hover:bg-slate-900 rounded-lg transition-colors"
                   title="Đăng xuất"
                 >
                   <SignOut size={16} />
@@ -226,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ) : (
             <button
               onClick={onOpenAuth}
-              className={`w-full flex items-center justify-center space-x-2 py-2 px-3 bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 rounded-xl text-xs transition-colors ${
+              className={`w-full flex items-center justify-center space-x-2 py-2 px-3 bg-slate-200/80 dark:bg-slate-900 hover:bg-slate-300/80 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-800 rounded-xl text-xs transition-colors ${
                 !isOpen && 'px-0'
               }`}
             >

@@ -133,9 +133,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-950 text-slate-100 bg-grid-pattern relative selection:bg-emerald-500 selection:text-slate-950">
+    <div className="min-h-screen flex bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 bg-grid-pattern relative selection:bg-indigo-500 selection:text-white transition-colors duration-200">
       {/* Glow Effects */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-emerald-500/10 via-teal-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-indigo-500/10 via-indigo-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
 
       {/* ChatGPT-style Collapsible Sidebar */}
       <Sidebar
@@ -164,17 +164,17 @@ export default function Home() {
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
           {/* Hero Banner */}
           <section className="text-center space-y-4 pt-4 pb-2">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-semibold shadow-xs">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Multi-Agent Strategy Engine powered by Gemini 3.1 Pro</span>
+              <span>Nền Tảng Phân Tích & Nghiên Cứu Thị Trường Doanh Nghiệp</span>
             </div>
 
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-100 via-slate-200 to-emerald-300">
-              Phân Tích Thị Trường & Sinh Chiến Lược Kinh Doanh Tự Động
+            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight text-slate-900 dark:text-slate-100">
+              Nền Tảng Phân Tích Thị Trường & Xây Dựng Chiến Lược Kinh Doanh
             </h2>
 
-            <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-              Nhập ngành hàng hoặc chủ đề sản phẩm để nhận báo cáo phân tích ngách, chiến lược giá, rủi ro và câu lệnh AI chuyên sâu trong thời gian thực.
+            <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+              Nhập sản phẩm hoặc ngách kinh doanh để nhận báo cáo chiến lược toàn diện bao gồm: Thị trường ngách, Chiến lược giá tối ưu, Đánh giá rủi ro và Bộ từ khóa SEO.
             </p>
           </section>
 
@@ -190,13 +190,13 @@ export default function Home() {
 
           {/* Error State display */}
           {status === 'error' && (
-            <div className="w-full max-w-4xl mx-auto bg-rose-950/20 border border-rose-500/30 rounded-2xl p-6 text-slate-200 flex items-start space-x-3 shadow-xl">
-              <AlertCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
+            <div className="w-full max-w-4xl mx-auto bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-500/30 rounded-2xl p-6 text-slate-800 dark:text-slate-200 flex items-start space-x-3 shadow-md">
+              <AlertCircle className="w-6 h-6 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-rose-300">Lỗi kết nối hoặc xử lý dữ liệu</h4>
-                <p className="text-xs text-slate-300">{errorMessage}</p>
-                <p className="text-[11px] text-slate-400 pt-1">
-                  Hãy đảm bảo backend FastAPI đang khởi chạy tại <code className="text-emerald-400">http://localhost:8000</code>.
+                <h4 className="text-sm font-bold text-rose-700 dark:text-rose-300">Lỗi kết nối hoặc xử lý dữ liệu</h4>
+                <p className="text-xs text-slate-700 dark:text-slate-300">{errorMessage}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+                  Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau ít phút.
                 </p>
               </div>
             </div>
@@ -212,17 +212,17 @@ export default function Home() {
           {/* Generative UI Section */}
           {status !== 'idle' && routerDecision?.intent !== 'INVALID' && (
             <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                 <div className="flex items-center space-x-2">
-                  <BarChart3 className="w-5 h-5 text-emerald-400" />
-                  <h3 className="text-lg font-bold text-slate-100">
-                    Báo Cáo Phân Tích Chiến Lược: <span className="text-emerald-400">{activeTopic}</span>
+                  <BarChart3 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    Báo Cáo Phân Tích Chiến Lược: <span className="text-indigo-600 dark:text-indigo-400">{activeTopic}</span>
                   </h3>
                 </div>
                 {status === 'analyzing' && (
-                  <div className="flex items-center space-x-2 text-xs text-emerald-400 font-mono animate-pulse">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span>Streaming Generative UI...</span>
+                  <div className="flex items-center space-x-2 text-xs text-indigo-600 dark:text-indigo-400 font-mono animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400"></span>
+                    <span>Đang xây dựng báo cáo trực tiếp...</span>
                   </div>
                 )}
               </div>
@@ -261,33 +261,33 @@ export default function Home() {
           {/* Empty State / Initial Landing Guide */}
           {status === 'idle' && (
             <section className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
-              <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 space-y-2 hover:border-slate-700 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-sm">
+              <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 space-y-2 hover:border-indigo-300 dark:hover:border-slate-700 transition-all shadow-xs">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
                   01
                 </div>
-                <h4 className="text-sm font-semibold text-slate-200">Định tuyến & Lọc truy vấn</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Router Agent sử dụng Gemini API phân tích và lọc truy vấn hợp lệ trước khi thực thi.
+                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Phân tích Ngách & Thị trường</h4>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Xác định khoảng trống thị trường, cơ hội cạnh tranh và mô tả chi tiết tệp khách hàng mục tiêu.
                 </p>
               </div>
 
-              <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 space-y-2 hover:border-slate-700 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 font-bold text-sm">
+              <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 space-y-2 hover:border-indigo-300 dark:hover:border-slate-700 transition-all shadow-xs">
+                <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-sm">
                   02
                 </div>
-                <h4 className="text-sm font-semibold text-slate-200">Truy xuất GraphRAG</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Kết hợp vector database ChromaDB và đồ thị thực thể NetworkX để tổng hợp tri thức.
+                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Định giá & Hạn chế Rủi ro</h4>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Đề xuất khoảng giá kinh doanh tối ưu kèm đánh giá các rủi ro vận hành, tài chính & đối thủ.
                 </p>
               </div>
 
-              <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 space-y-2 hover:border-slate-700 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-sm">
+              <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 space-y-2 hover:border-indigo-300 dark:hover:border-slate-700 transition-all shadow-xs">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm">
                   03
                 </div>
-                <h4 className="text-sm font-semibold text-slate-200">Generative UI Streaming</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Nội dung chiến lược được stream trực tiếp dạng JSON và cập nhật giao diện thời gian thực.
+                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Tối ưu hóa Thương mại & SEO</h4>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Cung cấp bộ từ khóa tìm kiếm hàng đầu và gợi ý nội dung marketing hiệu quả cao.
                 </p>
               </div>
             </section>
@@ -295,15 +295,15 @@ export default function Home() {
         </main>
 
         {/* Footer */}
-        <footer className="w-full border-t border-slate-800/80 bg-slate-950/80 py-6 mt-12">
+        <footer className="w-full border-t border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/80 py-6 mt-12 transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-            <p>© 2026 AMA-System. Automated Market Analysis & Strategy Engine.</p>
+            <p>© 2026 AMA Market Intelligence Platform. All rights reserved.</p>
             <div className="flex items-center space-x-4">
-              <span className="hover:text-slate-400 cursor-pointer">Next.js 16 App Router</span>
+              <span className="hover:text-slate-700 dark:hover:text-slate-400 cursor-pointer">Báo cáo Phân tích Kinh doanh</span>
               <span>•</span>
-              <span className="hover:text-slate-400 cursor-pointer">FastAPI + CrewAI</span>
+              <span className="hover:text-slate-700 dark:hover:text-slate-400 cursor-pointer">Bảo mật Enterprise</span>
               <span>•</span>
-              <span className="hover:text-slate-400 cursor-pointer">Supabase Auth</span>
+              <span className="hover:text-slate-700 dark:hover:text-slate-400 cursor-pointer">Dữ liệu Thời gian thực</span>
             </div>
           </div>
         </footer>
