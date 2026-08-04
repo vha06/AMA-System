@@ -1,6 +1,29 @@
 import { RouterDecision } from '../types/market';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  '';
+
+async function handleResponseError(response: Response, defaultMsg: string): Promise<never> {
+  let detailMessage = defaultMsg;
+  try {
+    const text = await response.text();
+    try {
+      const json = JSON.parse(text);
+      detailMessage = json.detail || json.message || `${defaultMsg} (${response.status})`;
+    } catch {
+      if (response.status === 502 || response.status === 504) {
+        detailMessage = `Máy chủ Backend (Render) đang khởi động lại từ trạng thái ngủ đông. Vui lòng thử lại sau 30 giây! (${response.status})`;
+      } else {
+        detailMessage = `${defaultMsg} (${response.status}: ${text.slice(0, 150)})`;
+      }
+    }
+  } catch {
+    detailMessage = `${defaultMsg} (${response.status})`;
+  }
+  throw new Error(detailMessage);
+}
 
 export async function analyzeRouterQuery(query: string): Promise<RouterDecision> {
   const response = await fetch(`${API_BASE_URL}/api/v1/router/analyze`, {
@@ -12,8 +35,7 @@ export async function analyzeRouterQuery(query: string): Promise<RouterDecision>
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: 'Network request failed' }));
-    throw new Error(errorData.detail || `Server error (${response.status})`);
+    await handleResponseError(response, 'Lỗi kết nối máy chủ phân tích');
   }
 
   return response.json();
@@ -39,12 +61,11 @@ export async function streamInsightReport(
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: 'Stream request failed' }));
-    throw new Error(errorData.detail || `Stream server error (${response.status})`);
+    await handleResponseError(response, 'Lỗi kết nối tạo báo cáo');
   }
 
   if (!response.body) {
-    throw new Error('Response body is null, stream cannot be established.');
+    throw new Error('Không thể khởi tạo luồng dữ liệu (response body null).');
   }
 
   const reader = response.body.getReader();
@@ -82,8 +103,7 @@ export async function streamCrewAnalysis(
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: 'Crew stream failed' }));
-    throw new Error(errorData.detail || `Crew stream error (${response.status})`);
+    await handleResponseError(response, 'Lỗi kết nối luồng đa tác tử CrewAI');
   }
 
   if (!response.body) return;
@@ -112,4 +132,3 @@ export async function streamCrewAnalysis(
     }
   }
 }
-
