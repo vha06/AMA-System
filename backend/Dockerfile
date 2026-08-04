@@ -23,7 +23,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 COPY pyproject.toml uv.lock ./
 
 # Install project dependencies into global python environment
-RUN uv pip install --system --no-cache .
+RUN uv pip install --system --no-cache -r pyproject.toml
 
 # Install Playwright Chromium browser and its system dependencies
 RUN playwright install chromium --with-deps
