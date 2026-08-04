@@ -89,33 +89,40 @@ class InsightAgent:
             yield from self._stream_heuristic_fallback(topic, context_data)
             return
 
-        try:
-            prompt = f"Chủ đề phân tích: {topic}\n\nDữ liệu bối cảnh (Context Data):\n{context_data}"
-            config = types.GenerateContentConfig(
-                system_instruction=INSIGHT_SYSTEM_PROMPT,
-                response_mime_type="application/json",
-                response_schema=InsightReport,
-                temperature=0.2,
-            )
+        prompt = f"Chủ đề phân tích: {topic}\n\nDữ liệu bối cảnh (Context Data):\n{context_data}"
+        config = types.GenerateContentConfig(
+            system_instruction=INSIGHT_SYSTEM_PROMPT,
+            response_mime_type="application/json",
+            response_schema=InsightReport,
+            temperature=0.2,
+        )
 
-            response_stream = self._client.models.generate_content_stream(
-                model=self.model_name,
-                contents=prompt,
-                config=config,
-            )
+        candidate_models = [self.model_name]
+        for fallback in ["gemini-2.5-flash", "gemini-1.5-flash"]:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
 
-            has_yielded = False
-            for chunk in response_stream:
-                if chunk.text:
-                    has_yielded = True
-                    yield chunk.text
+        for model in candidate_models:
+            try:
+                response_stream = self._client.models.generate_content_stream(
+                    model=model,
+                    contents=prompt,
+                    config=config,
+                )
 
-            if not has_yielded:
-                yield from self._stream_heuristic_fallback(topic, context_data)
+                has_yielded = False
+                for chunk in response_stream:
+                    if chunk.text:
+                        has_yielded = True
+                        yield chunk.text
 
-        except Exception as e:
-            logger.error(f"Error streaming Gemini API for insight generation: {e}")
-            yield from self._stream_heuristic_fallback(topic, context_data)
+                if has_yielded:
+                    return
+            except Exception as e:
+                logger.warning(f"Gemini model {model} failed ({e}). Trying next model if available...")
+
+        logger.error("All Gemini API models failed. Falling back to heuristic mock response.")
+        yield from self._stream_heuristic_fallback(topic, context_data)
 
     def _stream_heuristic_fallback(
         self, topic: str, context_data: str

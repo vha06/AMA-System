@@ -50,9 +50,16 @@ class SupabaseService:
         if source_links is None:
             source_links = []
 
+        clean_user_id = None
+        if user_id and user_id != "anonymous":
+            try:
+                clean_user_id = str(uuid.UUID(user_id))
+            except (ValueError, TypeError):
+                clean_user_id = None
+
         log_data = {
             "id": str(uuid.uuid4()),
-            "user_id": user_id,
+            "user_id": clean_user_id,
             "prompt": prompt,
             "results": results,
             "status": status,
