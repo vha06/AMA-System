@@ -80,5 +80,6 @@ npm run dev
 Để hiểu sâu hơn về lý do lựa chọn các công nghệ (Gemini 3.5, Supabase, CrewAI, LlamaIndex), vui lòng xem:
 - [Hồ sơ Quyết định Kiến trúc (ADR)](docs/decisions/)
 - [Tài liệu API Hệ thống](docs/api.md)
+- [Hướng dẫn Triển khai Đám mây (Deployment Guide)](docs/deployment_guide.md)
 
 *(Chi tiết danh sách tiến độ các tác vụ tổng quan nằm trong file `docs/task.md`)*

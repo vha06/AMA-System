@@ -232,3 +232,4 @@ task.md
 backend/data/
 backend/test_pg_persist/
 tasks/
+data/
