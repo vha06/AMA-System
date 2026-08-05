@@ -37,10 +37,11 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({ status, curr
     <div className="w-full max-w-4xl mx-auto bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 sm:p-6 backdrop-blur-xl shadow-md space-y-4 transition-colors">
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
         <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-ping"></span>
+          <span className={`w-2 h-2 rounded-full ${status === 'waking' ? 'bg-amber-500' : 'bg-indigo-600 dark:bg-indigo-400 animate-ping'}`}></span>
           <span>Tiến trình tổng hợp báo cáo</span>
         </h3>
         <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+          {status === 'waking' && 'Đang chờ máy chủ AI khởi động...'}
           {status === 'routing' && 'Đang kiểm tra từ khóa...'}
           {status === 'analyzing' && 'Đang xây dựng báo cáo chiến lược...'}
           {status === 'completed' && 'Đã hoàn tất báo cáo!'}
@@ -51,7 +52,7 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({ status, curr
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {steps.map((step) => {
           const isDone = currentStep > step.id || status === 'completed';
-          const isCurrent = currentStep === step.id && status !== 'completed' && status !== 'error';
+          const isCurrent = currentStep === step.id && status !== 'completed' && status !== 'error' && status !== 'waking';
           const Icon = step.icon;
 
           return (

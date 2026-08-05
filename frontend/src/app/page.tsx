@@ -13,8 +13,9 @@ import { RisksCard } from '../components/RisksCard';
 import { SeoKeywordsCard } from '../components/SeoKeywordsCard';
 import { AiPromptsCard } from '../components/AiPromptsCard';
 import { ReportToolbar } from '../components/ReportToolbar';
+import { ServerWakeupNotice } from '../components/ServerWakeupNotice';
 
-import { analyzeRouterQuery, streamInsightReport } from '../lib/api';
+import { analyzeRouterQuery, streamInsightReport, checkBackendHealth } from '../lib/api';
 import { parsePartialInsightReport } from '../lib/json-stream-parser';
 import { createClient } from '../lib/supabase/client';
 import { RouterDecision, InsightReport, AnalysisStatus } from '../types/market';
@@ -28,6 +29,10 @@ export default function Home() {
   const [report, setReport] = useState<Partial<InsightReport>>({});
   const [errorMessage, setErrorMessage] = useState<string>('');
 
+  // Backend Health & Render Hibernation States
+  const [isBackendHealthy, setIsBackendHealthy] = useState<boolean | null>(null);
+  const [wakeupNoticeState, setWakeupNoticeState] = useState<'waking' | 'ready' | null>(null);
+
   // Auth & Session States
   const [user, setUser] = useState<any | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -37,6 +42,11 @@ export default function Home() {
   const supabase = createClient();
 
   useEffect(() => {
+    // Proactive background ping on mount to wake up Render backend
+    checkBackendHealth(3500).then((healthy) => {
+      setIsBackendHealthy(healthy);
+    });
+
     // Check active session
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
@@ -89,6 +99,33 @@ export default function Home() {
     setErrorMessage('');
     setRouterDecision(null);
     setReport({});
+    
+    // Check if backend is active, wake it up if hibernating
+    let isReady = isBackendHealthy;
+    if (isReady !== true) {
+      isReady = await checkBackendHealth(3000);
+    }
+
+    if (!isReady) {
+      // Backend is asleep on Render, set waking state
+      setStatus('waking');
+      setWakeupNoticeState('waking');
+
+      // Poll until backend comes online
+      let healthy = false;
+      while (!healthy) {
+        await new Promise((r) => setTimeout(r, 3000));
+        healthy = await checkBackendHealth(3000);
+      }
+
+      setIsBackendHealthy(true);
+      setWakeupNoticeState('ready');
+      await new Promise((r) => setTimeout(r, 2000));
+      setWakeupNoticeState(null);
+    } else {
+      setIsBackendHealthy(true);
+    }
+
     setStatus('routing');
     setCurrentStep(1);
 
@@ -180,8 +217,15 @@ export default function Home() {
 
           {/* Search Input Box */}
           <section>
-            <SearchInput onSearch={handleSearch} isLoading={status === 'routing' || status === 'analyzing'} />
+            <SearchInput onSearch={handleSearch} isLoading={status === 'routing' || status === 'analyzing' || status === 'waking'} />
           </section>
+
+          {/* Server Hibernation / Wakeup Notice */}
+          {wakeupNoticeState && (
+            <section className="animate-in fade-in slide-in-from-top-2 duration-300">
+              <ServerWakeupNotice state={wakeupNoticeState} />
+            </section>
+          )}
 
           {/* Progress Stepper */}
           <section>

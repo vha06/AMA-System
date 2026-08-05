@@ -132,3 +132,20 @@ export async function streamCrewAnalysis(
     }
   }
 }
+
+export async function checkBackendHealth(timeoutMs = 5000): Promise<boolean> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch {
+    clearTimeout(timeoutId);
+    return false;
+  }
+}

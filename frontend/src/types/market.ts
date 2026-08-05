@@ -20,4 +20,4 @@ export interface InsightReport {
   ai_prompts: string[];
 }
 
-export type AnalysisStatus = 'idle' | 'routing' | 'analyzing' | 'completed' | 'error';
+export type AnalysisStatus = 'idle' | 'waking' | 'routing' | 'analyzing' | 'completed' | 'error';
