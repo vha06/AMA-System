@@ -20,16 +20,12 @@ export const ChatbotResponseCard: React.FC<ChatbotResponseCardProps> = ({
     'Khóa học lập trình AI cho sinh viên ngành CNTT',
   ];
 
-  // Helper to format technical 3rd-person LLM output into a warm 1st-person assistant greeting
-  const formatFriendlyMessage = (text: string) => {
-    if (!text || /người dùng|truy vấn|yêu cầu/i.test(text)) {
-      return 'Xin chào bạn! Mình là Trợ Lý Phân Tích AMA. Rất vui được gặp bạn! Hãy nhập tên sản phẩm, dịch vụ hoặc ngách kinh doanh mà bạn đang quan tâm (ví dụ: "Thị trường thời trang Gen Z", "Kinh doanh đồ ăn vặt Shopee") để mình khởi tạo báo cáo nghiên cứu nhé.';
-    }
-    return text;
-  };
+  const messageText =
+    'Xin chào bạn! Mình là Trợ Lý Phân Tích AMA. Rất vui được gặp bạn! Có vẻ như yêu cầu của bạn không liên quan đến chức năng của mình. Hãy nhập tên sản phẩm, dịch vụ hoặc ngách kinh doanh mà bạn đang quan tâm (ví dụ: "Thị trường thời trang Gen Z", "Kinh doanh đồ ăn vặt Shopee") để mình khởi tạo báo cáo nghiên cứu nhé.';
 
-  const messageText = formatFriendlyMessage(decision.reasoning);
-  const isTopicGreeting = !decision.topic || /^(xin chào|hello|hi|chào|thời tiết)/i.test(decision.topic.trim());
+  const isTopicGreeting =
+    !decision.topic ||
+    /^(xin chào|hello|hi|chào|thời tiết|viết|ai)/i.test(decision.topic.trim());
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-white/90 dark:bg-slate-900/90 border border-indigo-100 dark:border-slate-800/90 rounded-2xl p-6 shadow-xl backdrop-blur-xl transition-all space-y-5 animate-in fade-in slide-in-from-bottom-3 duration-300">
