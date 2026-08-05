@@ -44,6 +44,15 @@ def test_router_agent_heuristic_fallback_out_of_scope():
     assert result.intent == IntentType.OUT_OF_SCOPE
 
 
+def test_router_agent_fast_path():
+    agent = RouterAgent(api_key="fake-api-key")
+    queries = ["Xin chào", "Hôm nay là thứ mấy?", "Thời tiết", "hi"]
+    for q in queries:
+        result = agent.analyze_query(q)
+        assert result.intent == IntentType.OUT_OF_SCOPE
+        assert "Fast-path" in result.reasoning
+
+
 def test_fastapi_router_endpoint():
     response = client.post(
         "/api/v1/router/analyze",

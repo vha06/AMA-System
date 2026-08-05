@@ -65,6 +65,45 @@ class RouterAgent:
 
         raise last_exception or ValueError("Empty response received from all Gemini API models.")
 
+    def _fast_path_filter(self, query: str) -> RouterDecision | None:
+        """Fast-path filter to instantly reject obvious out-of-scope queries without calling LLM."""
+        q_lower = query.strip().lower()
+
+        market_keywords = [
+            "thị trường", "ngách", "sản phẩm", "bán", "kinh doanh", "đối thủ",
+            "giá", "tiktok", "shopee", "lazada", "amazon", "phân tích", "khách hàng",
+            "chiến lược", "seo", "marketing", "doanh thu", "lợi nhuận", "chi phí"
+        ]
+        has_market_keyword = any(kw in q_lower for kw in market_keywords)
+
+        # 1. Rất ngắn (dưới 5 ký tự) và không có từ khóa kinh doanh
+        if len(q_lower) < 5 and not has_market_keyword:
+            return RouterDecision(
+                intent=IntentType.OUT_OF_SCOPE,
+                confidence=0.95,
+                reasoning="Fast-path: Câu hỏi quá ngắn và không chứa thông tin kinh doanh.",
+                clarification_needed="Bạn muốn phân tích ngách sản phẩm hay thị trường nào?",
+            )
+
+        # 2. Danh sách các cụm từ/mẫu câu ngoài lề điển hình
+        out_of_scope_patterns = [
+            "xin chào", "hello", "hi", "chào bạn", "chào em", "chào anh", "chào chị",
+            "thời tiết", "thứ mấy", "ngày mấy", "mấy giờ", "bạn là ai", "tên là gì",
+            "chúc ngon miệng", "chúc buổi sáng", "tạm biệt", "bye", "hôm nay là thứ mấy"
+        ]
+
+        # Nếu phát hiện cụm từ ngoài lề VÀ không hề chứa bất kỳ từ khóa kinh doanh nào
+        is_explicit_out_of_scope = any(p in q_lower for p in out_of_scope_patterns)
+        if is_explicit_out_of_scope and not has_market_keyword:
+            return RouterDecision(
+                intent=IntentType.OUT_OF_SCOPE,
+                confidence=0.95,
+                reasoning="Fast-path: Phát hiện câu hỏi ngoài lề/giao tiếp thông thường.",
+                clarification_needed="Hãy nhập tên sản phẩm hoặc ngách kinh doanh bạn muốn nghiên cứu.",
+            )
+
+        return None
+
     def analyze_query(self, query: str) -> RouterDecision:
         """Public interface to analyze and route user queries."""
         if not query or not query.strip():
@@ -74,6 +113,12 @@ class RouterAgent:
                 reasoning="Yêu cầu rỗng hoặc không có nội dung.",
                 clarification_needed="Vui lòng nhập nội dung câu hỏi hoặc yêu cầu nghiên cứu thị trường.",
             )
+
+        # Check fast-path filter first to bypass LLM latency for non-business chats
+        fast_path_decision = self._fast_path_filter(query)
+        if fast_path_decision:
+            logger.info(f"Fast-path filter matched for query: '{query}' -> OUT_OF_SCOPE")
+            return fast_path_decision
 
         if not self.api_key:
             return self._heuristic_fallback(query)
