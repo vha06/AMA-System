@@ -38,7 +38,15 @@ export async function analyzeRouterQuery(query: string): Promise<RouterDecision>
     await handleResponseError(response, 'Lỗi kết nối máy chủ phân tích');
   }
 
-  return response.json();
+  const raw = await response.json();
+  const isInvalid = raw.intent === 'OUT_OF_SCOPE' || raw.intent === 'INVALID';
+
+  return {
+    intent: isInvalid ? 'INVALID' : 'VALID',
+    reasoning: raw.reasoning || (isInvalid ? 'Truy vấn không thuộc phạm vi phân tích thị trường.' : ''),
+    topic: raw.niche_or_topic || raw.topic || query,
+    suggested_action: raw.clarification_needed || raw.suggested_action || '',
+  };
 }
 
 export async function streamInsightReport(
