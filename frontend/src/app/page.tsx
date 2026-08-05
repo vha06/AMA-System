@@ -6,7 +6,7 @@ import { Sidebar, SessionLogItem } from '../components/Sidebar';
 import { AuthModal } from '../components/AuthModal';
 import { SearchInput } from '../components/SearchInput';
 import { AnalysisProgress } from '../components/AnalysisProgress';
-import { InvalidQueryCard } from '../components/InvalidQueryCard';
+import { ChatbotResponseCard } from '../components/ChatbotResponseCard';
 import { NicheAnalysisCard } from '../components/NicheAnalysisCard';
 import { PricingStrategyCard } from '../components/PricingStrategyCard';
 import { RisksCard } from '../components/RisksCard';
@@ -252,10 +252,10 @@ export default function Home() {
             </div>
           )}
 
-          {/* Router Invalid Decision */}
+          {/* Router Invalid / Out-of-Scope Decision */}
           {routerDecision && routerDecision.intent === 'INVALID' && (
             <section className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <InvalidQueryCard decision={routerDecision} onTryQuery={handleSearch} />
+              <ChatbotResponseCard decision={routerDecision} onTryQuery={handleSearch} />
             </section>
           )}
 
