@@ -46,11 +46,17 @@ def test_router_agent_heuristic_fallback_out_of_scope():
 
 def test_router_agent_fast_path():
     agent = RouterAgent(api_key="fake-api-key")
-    queries = ["Xin chào", "Hôm nay là thứ mấy?", "Thời tiết", "hi"]
-    for q in queries:
+    blocked_queries = ["Xin chào", "Hôm nay là thứ mấy?", "Thời tiết", "hi", "Năm nay", "như thế nào"]
+    for q in blocked_queries:
         result = agent.analyze_query(q)
         assert result.intent == IntentType.OUT_OF_SCOPE
         assert "Fast-path" in result.reasoning
+
+    # Fast-path filter should return None for short queries containing market/industry keywords
+    valid_short_queries = ["Thị trường AI", "Bán F&B", "Xe điện"]
+    for q in valid_short_queries:
+        decision = agent._fast_path_filter(q)
+        assert decision is None
 
 
 def test_fastapi_router_endpoint():
