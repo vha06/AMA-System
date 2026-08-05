@@ -3,15 +3,14 @@ from src.core.config import settings
 from src.agents.crew.tools.crew_tools import MarketSearchCrewTool, WebScraperCrewTool
 
 
-def get_llm() -> LLM:
+def get_llm(model_name: str | None = None) -> LLM:
     """Khởi tạo cấu hình LLM cho CrewAI."""
-    model_name = settings.LLM_MODEL
+    target_model = model_name or settings.LLM_MODEL
     return LLM(
-        model=f"gemini/{model_name}",
+        model=f"gemini/{target_model}",
         api_key=settings.GEMINI_API_KEY or "dummy_key",
         temperature=0.2,
     )
-
 
 
 def create_router_agent() -> Agent:
@@ -25,7 +24,7 @@ def create_router_agent() -> Agent:
         ),
         verbose=True,
         allow_delegation=False,
-        llm=get_llm(),
+        llm=get_llm(settings.ROUTER_LLM_MODEL),
     )
 
 
@@ -41,7 +40,7 @@ def create_scraper_agent() -> Agent:
         tools=[MarketSearchCrewTool(), WebScraperCrewTool()],
         verbose=True,
         allow_delegation=False,
-        llm=get_llm(),
+        llm=get_llm(settings.SCRAPER_LLM_MODEL),
     )
 
 
@@ -56,5 +55,5 @@ def create_insight_agent() -> Agent:
         ),
         verbose=True,
         allow_delegation=False,
-        llm=get_llm(),
+        llm=get_llm(settings.INSIGHT_LLM_MODEL),
     )

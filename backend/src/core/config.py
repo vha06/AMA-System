@@ -8,13 +8,12 @@ load_dotenv()
 def get_valid_google_model(env_model: str) -> str:
     raw_model = (env_model or "").strip()
     valid_prefixes = (
-        "gemini-3.6",
-        "gemini-3.5",
-        "gemini-3.1",
-        "gemini-3",
-        "gemini-2.5",
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-3.1-flash",
+        "gemini-3-flash",
+        "gemini-2.5-flash",
         "gemini-flash",
-        "gemini-pro",
         "gemma-4",
     )
     if raw_model and any(raw_model.startswith(p) for p in valid_prefixes):
@@ -53,6 +52,9 @@ class Settings(BaseModel):
     GEMINI_API_KEY: str = ""
     LLM_MODEL: str = ""
     GEMINI_MODEL: str = ""
+    ROUTER_LLM_MODEL: str = ""
+    SCRAPER_LLM_MODEL: str = ""
+    INSIGHT_LLM_MODEL: str = ""
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
@@ -69,6 +71,18 @@ class Settings(BaseModel):
             )
         if not self.GEMINI_MODEL:
             self.GEMINI_MODEL = self.LLM_MODEL
+        if not self.ROUTER_LLM_MODEL:
+            self.ROUTER_LLM_MODEL = get_valid_google_model(
+                os.getenv("ROUTER_LLM_MODEL") or self.LLM_MODEL
+            )
+        if not self.SCRAPER_LLM_MODEL:
+            self.SCRAPER_LLM_MODEL = get_valid_google_model(
+                os.getenv("SCRAPER_LLM_MODEL") or "gemma-4-31b-it"
+            )
+        if not self.INSIGHT_LLM_MODEL:
+            self.INSIGHT_LLM_MODEL = get_valid_google_model(
+                os.getenv("INSIGHT_LLM_MODEL") or self.LLM_MODEL
+            )
         if not self.SUPABASE_URL:
             self.SUPABASE_URL = os.getenv("SUPABASE_URL", "")
         if not self.SUPABASE_KEY:

@@ -4,6 +4,7 @@ import logging
 from typing import AsyncGenerator
 from crewai import Crew, Process
 
+from src.core.config import settings
 from src.agents.crew.agents import (
     create_router_agent,
     create_scraper_agent,
@@ -58,7 +59,7 @@ class HierarchicalMarketCrew:
         t2 = create_scrape_task(scraper)
         t3 = create_insight_task(insight)
 
-        manager_llm = get_llm()
+        manager_llm = get_llm(settings.INSIGHT_LLM_MODEL)
 
         crew = Crew(
             agents=[router, scraper, insight],

@@ -34,7 +34,7 @@ class ScraperAgent:
         max_urls_to_scrape: int = 5,
     ):
         self.api_key = api_key or settings.GEMINI_API_KEY
-        self.model_name = model_name or settings.LLM_MODEL
+        self.model_name = model_name or settings.SCRAPER_LLM_MODEL
         self.max_urls_to_scrape = max_urls_to_scrape
         self.search_tool = DuckDuckGoSearchTool()
         self.scraper_tool = WebScraperTool()

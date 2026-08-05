@@ -53,3 +53,14 @@ def test_settings_llm_model(monkeypatch):
     s = Settings()
     assert s.LLM_MODEL == "gemma-4-26b-it"
     assert s.GEMINI_MODEL == "gemma-4-26b-it"
+
+
+def test_settings_agent_models(monkeypatch):
+    monkeypatch.setenv("LLM_MODEL", "gemini-3.5-flash")
+    monkeypatch.setenv("SCRAPER_LLM_MODEL", "gemma-4-31b-it")
+    monkeypatch.setenv("ROUTER_LLM_MODEL", "gemini-3.6-flash")
+    s = Settings()
+    assert s.ROUTER_LLM_MODEL == "gemini-3.6-flash"
+    assert s.SCRAPER_LLM_MODEL == "gemma-4-31b-it"
+    assert s.INSIGHT_LLM_MODEL == "gemini-3.5-flash"
+
