@@ -61,3 +61,7 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "ama-backend"}
+
+@app.get("/api/v1/health")
+def health_check_v1():
+    return {"status": "ok", "service": "ama-backend"}

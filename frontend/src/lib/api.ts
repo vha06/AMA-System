@@ -133,17 +133,26 @@ export async function streamCrewAnalysis(
   }
 }
 
-export async function checkBackendHealth(timeoutMs = 5000): Promise<boolean> {
+export async function checkBackendHealth(timeoutMs = 4000): Promise<boolean> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/health`, {
+    const healthUrl = `${API_BASE_URL}/api/v1/health`;
+    const response = await fetch(healthUrl, {
       method: 'GET',
+      headers: { 'Cache-Control': 'no-cache' },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
-    return response.ok;
+    if (response.ok) return true;
+
+    // Fallback to /health endpoint
+    const fallbackResponse = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    return fallbackResponse.ok;
   } catch {
     clearTimeout(timeoutId);
     return false;

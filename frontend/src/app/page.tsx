@@ -111,16 +111,22 @@ export default function Home() {
       setStatus('waking');
       setWakeupNoticeState('waking');
 
-      // Poll until backend comes online
+      // Poll until backend comes online (max 20 attempts = ~60s)
       let healthy = false;
-      while (!healthy) {
+      let attempts = 0;
+      const maxAttempts = 20;
+
+      while (!healthy && attempts < maxAttempts) {
+        attempts++;
         await new Promise((r) => setTimeout(r, 3000));
         healthy = await checkBackendHealth(3000);
       }
 
-      setIsBackendHealthy(true);
-      setWakeupNoticeState('ready');
-      await new Promise((r) => setTimeout(r, 2000));
+      if (healthy) {
+        setIsBackendHealthy(true);
+        setWakeupNoticeState('ready');
+        await new Promise((r) => setTimeout(r, 1500));
+      }
       setWakeupNoticeState(null);
     } else {
       setIsBackendHealthy(true);
