@@ -141,7 +141,7 @@ export default function Home() {
       setRouterDecision(decision);
 
       if (decision.intent === 'INVALID') {
-        setStatus('completed');
+        setStatus('idle');
         return;
       }
 
