@@ -1,3 +1,5 @@
+*Read this in other languages: [English](README.md), [Tiếng Việt](README.vi.md)*
+
 # 🚀 AMA-System (Automated Market Analysis System)
 
 **Automated Market Analysis System** - A personal research project building a **Zero-Cost Research Stack** architecture. 
